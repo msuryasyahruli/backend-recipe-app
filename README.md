@@ -2,9 +2,9 @@
 <br />
 <p align="center">
   <div align="center">
-    <img height="150" src="https://cdn.discordapp.com/attachments/1118733891738554480/1146038619325349898/logo-removebg-preview.png" alt="blanja" border="0"/>
+    <img height="150" src="" alt="Recipe" border="0"/>
   </div>
-  <h3 align="center">Blanja</h3>
+  <h3 align="center">Mama Recipe</h3>
   <p align="center">
     <a href=""><strong>Explore the docs »</strong></a>
     <br />
