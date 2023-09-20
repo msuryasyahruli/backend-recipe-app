@@ -6,7 +6,7 @@
   </div>
   <h3 align="center">Mama Recipe</h3>
   <p align="center">
-    <a href=""><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/msuryasyahruli/backend-recipe-app.git"><strong>Explore the docs »</strong></a>
     <br />
     <a href="">View Demo</a>
     ·
@@ -48,13 +48,13 @@ These are the libraries and service used for building this backend API
 1. Clone this repository
 
 ```sh
-git clone 
+git clone https://github.com/msuryasyahruli/backend-recipe-app.git
 ```
 
-2. Change directory to blanja-web
+2. Change directory to Mama Recipe
 
 ```sh
-cd 
+cd backend-recipe-app
 ```
 
 3. Install all of the required modules
@@ -103,10 +103,10 @@ API endpoint list are also available as published postman documentation
 
 ## Related Project
 
-:rocket: [`Backend Blanja`]()
+:rocket: [`Backend Recipe`](https://github.com/msuryasyahruli/backend-recipe-app.git)
 
-:rocket: [`Frontend Blanja`]()
+:rocket: [`Frontend Recipe`](https://github.com/msuryasyahruli/recipe-mobile-app.git)
 
-:rocket: [`Demo Blanja`]()
+:rocket: [`Demo Recipe`]()
 
 Project link : []()
