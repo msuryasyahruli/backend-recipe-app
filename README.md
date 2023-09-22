@@ -2,7 +2,7 @@
 <br />
 <p align="center">
   <div align="center">
-    <img height="150" src="" alt="Recipe" border="0"/>
+    <img height="150" src="src/img/logo.png" alt="Recipe" border="0"/>
   </div>
   <h3 align="center">Mama Recipe</h3>
   <p align="center">
@@ -111,4 +111,4 @@ API endpoint list are also available as published postman documentation
 
 :rocket: [`Demo Recipe`]()
 
-Project link : []()
+Project link : [https://github.com/msuryasyahruli/recipe-mobile-app.git](https://github.com/msuryasyahruli/recipe-mobile-app.git)
