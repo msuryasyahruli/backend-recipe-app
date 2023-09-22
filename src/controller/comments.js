@@ -1,4 +1,5 @@
 const commonHelper = require("../helper/common");
+const { v4: uuidv4 } = require("uuid");
 const {
   selectAllComments,
   selectComments,
@@ -54,10 +55,10 @@ const commentsController = {
 
   insertcomments: async (req, res) => {
     const { recipes_id, users_id, comment_text } = req.body;
-    const {
-      rows: [count],
-    } = await countData();
-    const comment_id = Number(count.count) + 1;
+    // const {
+    //   rows: [count],
+    // } = await countData();
+    const comment_id = uuidv4();
     const data = {
       comment_id,
       recipes_id,
@@ -74,7 +75,7 @@ const commentsController = {
   updateComments: async (req, res) => {
     try {
       const { recipes_id, users_id, comment_text } = req.body;
-      const comment_id = Number(req.params.id);
+      const comment_id = String(req.params.id);
       const { rowCount } = await findID(comment_id);
       if (!rowCount) {
         res.json({ message: "ID Not Found" });
@@ -97,7 +98,7 @@ const commentsController = {
 
   deleteComments: async (req, res, next) => {
     try {
-      const comment_id = Number(req.params.id);
+      const comment_id = String(req.params.id);
       const { rowCount } = await findID(comment_id);
 
       if (!rowCount) {

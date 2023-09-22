@@ -23,7 +23,7 @@ const insertComments = (data) => {
   const { comment_id, recipes_id, users_id, comment_text } = data;
   return Pool.query(
     `INSERT INTO comments (comment_id, recipes_id, users_id, comment_text) 
-    VALUES(${comment_id}, '${recipes_id}', '${users_id}', '${comment_text}' )`
+    VALUES('${comment_id}', '${recipes_id}', '${users_id}', '${comment_text}' )`
   );
 };
 
@@ -31,13 +31,13 @@ const insertComments = (data) => {
 const updateComments = (data) => {
   const { comment_id, recipes_id, users_id, comment_text } = data;
   return Pool.query(
-    `UPDATE comments SET recipes_id='${recipes_id}', users_id='${users_id}', comment_text='${comment_text}' WHERE comment_id=${comment_id}`
+    `UPDATE comments SET recipes_id='${recipes_id}', users_id='${users_id}', comment_text='${comment_text}' WHERE comment_id='${comment_id}'`
   );
 };
 
 // DELETE Coments
 const deleteComments = (comment_id) => {
-  return Pool.query(`DELETE FROM comments WHERE comment_id=${comment_id}`);
+  return Pool.query(`DELETE FROM comments WHERE comment_id='${comment_id}'`);
 };
 
 // COUNT DATA
@@ -49,7 +49,7 @@ const countData = () => {
 const findID = (comment_id) => {
   return new Promise((resolve, reject) =>
     Pool.query(
-      `SELECT comments FROM comments WHERE comment_id=${comment_id}`,
+      `SELECT comments FROM comments WHERE comment_id='${comment_id}'`,
       (error, result) => {
         if (!error) {
           resolve(result);

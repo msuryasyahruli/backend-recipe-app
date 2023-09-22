@@ -24,7 +24,7 @@ CREATE TABLE recipes
 
 CREATE TABLE comments
 (
-    comment_id INT PRIMARY KEY,
+    comment_id VARCHAR PRIMARY KEY,
     recipes_id VARCHAR(255),
     users_id VARCHAR(255),
     comment_text VARCHAR(255),
