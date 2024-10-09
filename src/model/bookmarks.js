@@ -1,57 +1,37 @@
 const Pool = require("../config/db");
 
-// GET ALL Coments
-const selectAllBookmarks = ({ limit, offset, sort, sortby }) => {
-  return Pool.query(
-    `SELECT * FROM bookmarks ORDER BY ${sortby} ${sort} LIMIT ${limit} OFFSET ${offset}`
-  );
-};
-
-// SELECT RICAPES BY users id and recipes id
-const selectBookmarks = (users_id) => {
+// SELECT BY USER
+const selectBookmarks = (user_id) => {
   return Pool.query(`
-  SELECT bookmarks.*, users.*, recipes.*
+  SELECT bookmarks.*, users.user_name as recipe_by, recipes.recipe_title, recipes.recipe_thumbnail, bookmarks.created_at
   FROM bookmarks
-  LEFT JOIN users ON bookmarks.users_id = users.users_id
-  LEFT JOIN recipes ON bookmarks.recipes_id = recipes.recipes_id
-  WHERE bookmarks.users_id = '${users_id}'
+  LEFT JOIN recipes ON bookmarks.recipe_id = recipes.recipe_id
+  LEFT JOIN users ON recipes.user_id = users.user_id
+  WHERE bookmarks.user_id = '${user_id}'
   `);
 };
 
-// INSERT Coments
+// INSERT
 const insertBookmarks = (data) => {
-  const { bookmarks_id, recipes_id, users_id } = data;
+  const { bookmark_id, recipe_id, user_id } = data;
   return Pool.query(
-    `INSERT INTO bookmarks (bookmarks_id, recipes_id, users_id) 
-    VALUES('${bookmarks_id}', '${recipes_id}', '${users_id}' )`
+    `INSERT INTO bookmarks (bookmark_id, recipe_id, user_id) 
+    VALUES('${bookmark_id}', '${recipe_id}', '${user_id}' )`
   );
 };
 
-// UPDATE Coments
-const updateBookmarks = (data) => {
-  const { bookmarks_id, recipes_id, users_id } = data;
+// DELETE
+const deleteBookmarks = (bookmark_id) => {
   return Pool.query(
-    `UPDATE bookmarks SET recipes_id='${recipes_id}' users_id='${users_id}' WHERE bookmarks_id='${bookmarks_id}'`
+    `DELETE FROM bookmarks WHERE bookmark_id='${bookmark_id}'`
   );
 };
 
-// DELETE Coments
-const deleteBookmarks = (bookmarks_id) => {
-  return Pool.query(
-    `DELETE FROM bookmarks WHERE bookmarks_id='${bookmarks_id}'`
-  );
-};
-
-// COUNT DATA
-const countData = () => {
-  return Pool.query("SELECT COUNT(*) FROM bookmarks");
-};
-
-//
-const findID = (bookmarks_id) => {
+// FINDID
+const findID = (bookmark_id) => {
   return new Promise((resolve, reject) =>
     Pool.query(
-      `SELECT bookmarks FROM bookmarks WHERE bookmarks_id='${bookmarks_id}'`,
+      `SELECT bookmarks FROM bookmarks WHERE bookmark_id='${bookmark_id}'`,
       (error, result) => {
         if (!error) {
           resolve(result);
@@ -63,10 +43,10 @@ const findID = (bookmarks_id) => {
   );
 };
 
-const findBookmarksRecipesId = (recipes_id) => {
+const findRecipeID = (recipe_id) => {
   return new Promise((resolve, reject) =>
     Pool.query(
-      `SELECT * FROM bookmarks WHERE recipes_id='${recipes_id}'`,
+      `SELECT * FROM bookmarks WHERE recipe_id='${recipe_id}'`,
       (error, result) => {
         if (!error) {
           resolve(result);
@@ -78,10 +58,10 @@ const findBookmarksRecipesId = (recipes_id) => {
   );
 };
 
-const findBookmarksUsersId = (users_id) => {
+const findUserID = (user_id) => {
   return new Promise((resolve, reject) =>
     Pool.query(
-      `SELECT * FROM bookmarks WHERE users_id='${users_id}'`,
+      `SELECT * FROM bookmarks WHERE user_id='${user_id}'`,
       (error, result) => {
         if (!error) {
           resolve(result);
@@ -93,13 +73,10 @@ const findBookmarksUsersId = (users_id) => {
   );
 };
 module.exports = {
-  selectAllBookmarks,
   selectBookmarks,
   insertBookmarks,
-  updateBookmarks,
   deleteBookmarks,
-  findBookmarksRecipesId,
-  findBookmarksUsersId,
-  countData,
+  findRecipeID,
+  findUserID,
   findID,
 };

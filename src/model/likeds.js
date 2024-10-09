@@ -1,55 +1,35 @@
 const Pool = require("../config/db");
 
-// GET ALL Coments
-const selectAllLikeds = ({ limit, offset, sort, sortby }) => {
-  return Pool.query(
-    `SELECT * FROM likeds ORDER BY ${sortby} ${sort} LIMIT ${limit} OFFSET ${offset}`
-  );
-};
-
-// SELECT RICAPES BY users and recipes id
-const selectLikeds = (users_id) => {
+// SELECT BY USER
+const selectLikeds = (user_id) => {
   return Pool.query(`
-  SELECT likeds.*, users.*, recipes.*
+  SELECT likeds.liked_id, users.user_name as recipe_by, recipes.recipe_title, recipes.recipe_thumbnail, likeds.created_at
   FROM likeds
-  LEFT JOIN users ON likeds.users_id = users.users_id
-  LEFT JOIN recipes ON likeds.recipes_id = recipes.recipes_id
-  WHERE likeds.users_id = '${users_id}'
+  LEFT JOIN recipes ON likeds.recipe_id = recipes.recipe_id
+  LEFT JOIN users ON recipes.user_id = users.user_id
+  WHERE likeds.user_id = '${user_id}'
   `);
 };
 
-// INSERT Coments
+// INSERT
 const insertLikeds = (data) => {
-  const { likeds_id, recipes_id, users_id } = data;
+  const { liked_id, recipe_id, user_id } = data;
   return Pool.query(
-    `INSERT INTO likeds (likeds_id, recipes_id, users_id) 
-    VALUES('${likeds_id}', '${recipes_id}', '${users_id}' )`
+    `INSERT INTO likeds (liked_id, recipe_id, user_id) 
+    VALUES('${liked_id}', '${recipe_id}', '${user_id}' )`
   );
 };
 
-// UPDATE Coments
-const updateLikeds = (data) => {
-  const { likeds_id, recipes_id, users_id } = data;
-  return Pool.query(
-    `UPDATE likeds SET recipes_id='${recipes_id}' users_id='${users_id}' WHERE likeds_id='${likeds_id}'`
-  );
+// DELETE
+const deleteLikeds = (liked_id) => {
+  return Pool.query(`DELETE FROM likeds WHERE liked_id='${liked_id}'`);
 };
 
-// DELETE Coments
-const deleteLikeds = (likeds_id) => {
-  return Pool.query(`DELETE FROM likeds WHERE likeds_id='${likeds_id}'`);
-};
-
-// COUNT DATA
-const countData = () => {
-  return Pool.query("SELECT COUNT(*) FROM likeds");
-};
-
-//
-const findID = (likeds_id) => {
+// FIND ID
+const findID = (liked_id) => {
   return new Promise((resolve, reject) =>
     Pool.query(
-      `SELECT likeds FROM Likeds WHERE likeds_id='${likeds_id}'`,
+      `SELECT likeds FROM Likeds WHERE liked_id='${liked_id}'`,
       (error, result) => {
         if (!error) {
           resolve(result);
@@ -61,10 +41,10 @@ const findID = (likeds_id) => {
   );
 };
 
-const findLikedsRecipesId = (recipes_id) => {
+const findRecipeID = (recipe_id) => {
   return new Promise((resolve, reject) =>
     Pool.query(
-      `SELECT * FROM likeds WHERE recipes_id='${recipes_id}'`,
+      `SELECT likeds FROM Likeds WHERE recipe_id='${recipe_id}'`,
       (error, result) => {
         if (!error) {
           resolve(result);
@@ -76,10 +56,10 @@ const findLikedsRecipesId = (recipes_id) => {
   );
 };
 
-const findLikedsUsersId = (users_id) => {
+const findUserID = (user_id) => {
   return new Promise((resolve, reject) =>
     Pool.query(
-      `SELECT * FROM likeds WHERE users_id='${users_id}'`,
+      `SELECT likeds FROM Likeds WHERE user_id='${user_id}'`,
       (error, result) => {
         if (!error) {
           resolve(result);
@@ -92,13 +72,10 @@ const findLikedsUsersId = (users_id) => {
 };
 
 module.exports = {
-  selectAllLikeds,
   selectLikeds,
   insertLikeds,
-  updateLikeds,
   deleteLikeds,
-  findLikedsRecipesId,
-  findLikedsUsersId,
-  countData,
   findID,
+  findRecipeID,
+  findUserID,
 };
