@@ -1,59 +1,53 @@
 const Pool = require("../config/db");
 
-//GET ALL USERS
-const selectAllUsers = ({ limit, offset, sort, sortby }) => {
-  return Pool.query(
-    `SELECT * FROM users ORDER BY ${sortby} ${sort} LIMIT ${limit} OFFSET ${offset}`
-  );
-};
-
-//GET SELECT USERS
-const selectUsers = (users_id) => {
-  return Pool.query(`SELECT * FROM users WHERE users_id = '${users_id}'`);
-};
-
-//DELETE SELECT USERS
-const deleteUsers = (users_id) => {
-  return Pool.query(`DELETE FROM users WHERE users_id = '${users_id}'`);
-};
-
 //POST USERS
 const createUsers = (data) => {
   const {
-    users_id,
-    users_email,
-    users_password,
-    users_confirmpasswordHash,
-    users_name,
-    users_phone,
-    users_photo,
+    user_id,
+    user_email,
+    user_passwordHash,
+    user_name,
+    user_phone,
   } = data;
-  return Pool.query(`INSERT INTO users(users_id, users_email, users_password, users_confirmpassword,  users_name, users_phone, users_photo) 
-    VALUES ('${users_id}','${users_email}','${users_password}','${users_confirmpasswordHash}','${users_name}',
-    '${users_phone}','${users_photo}')`);
+  return Pool.query(`INSERT INTO users(user_id, user_email, user_password, user_name, user_phone) 
+    VALUES ('${user_id}','${user_email}','${user_passwordHash}','${user_name}','${user_phone}')`);
 };
 
-//PUT SELECT USERS
+//DELETE USERS
+const deleteUsers = (user_id) => {
+  return Pool.query(`DELETE FROM users WHERE user_id = '${user_id}'`);
+};
+
+//PATCH UPDATE USERS
 const updateUsers = (data) => {
-  const { users_id, users_name, users_phone, users_photo } = data;
+  const { user_id, user_name, user_phone, user_photo } = data;
+  const updates = [];
+
+  if (user_name) updates.push(`user_name = '${user_name}'`);
+  if (user_phone) updates.push(`user_phone = '${user_phone}'`);
+  if (user_photo) updates.push(`user_photo = '${user_photo}'`);
+
+  const setClause = updates.join(', ');
+
   return Pool.query(
-    `UPDATE users SET users_photo = '${users_photo}', users_name = '${users_name}', users_phone = '${users_phone}' WHERE users_id = '${users_id}'`
+    `UPDATE users SET ${setClause} WHERE user_id = '${user_id}'`
   );
 };
 
+//PUT UPDATE PASSWORD
 const updatePasswordUsers = (data) => {
-  const { users_id, users_email, users_password, users_confirmpasswordHash } =
+  const { user_id, user_passwordHash } =
     data;
   return Pool.query(
-    `UPDATE users SET users_password = '${users_password}', users_confirmpassword = '${users_confirmpasswordHash}'WHERE users_id = '${users_id}'`
+    `UPDATE users SET user_password = '${user_passwordHash}' WHERE user_id = '${user_id}'`
   );
 };
 
-//FIND EMAIL
-const findUUID = (users_id) => {
+//FIND ID
+const findID = (user_id) => {
   return new Promise((resolve, reject) =>
     Pool.query(
-      `SELECT * FROM users WHERE users_id= '${users_id}' `,
+      `SELECT * FROM users WHERE user_id= '${user_id}' `,
       (error, result) => {
         if (!error) {
           resolve(result);
@@ -65,10 +59,11 @@ const findUUID = (users_id) => {
   );
 };
 
-const findEmail = (users_email) => {
+//FIND EMAIL
+const findEmail = (user_email) => {
   return new Promise((resolve, reject) =>
     Pool.query(
-      `SELECT * FROM users WHERE users_email= '${users_email}' `,
+      `SELECT * FROM users WHERE user_email= '${user_email}' `,
       (error, result) => {
         if (!error) {
           resolve(result);
@@ -86,13 +81,11 @@ const countData = () => {
 };
 
 module.exports = {
-  selectAllUsers,
-  selectUsers,
   deleteUsers,
   createUsers,
   updateUsers,
   updatePasswordUsers,
-  findUUID,
+  findID,
   findEmail,
   countData,
 };

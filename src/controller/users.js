@@ -6,109 +6,62 @@ const authHelper = require("../helper/auth");
 const commonHelper = require("../helper/common");
 const cloudinary = require("../middlewares/cloudinary");
 let {
-  selectAllUsers,
-  selectUsers,
-  deleteUsers,
   createUsers,
   updateUsers,
   updatePasswordUsers,
-  findUUID,
+  deleteUsers,
+  findID,
   findEmail,
   countData,
 } = require("../model/users");
 
 let usersController = {
-  getAllUsers: async (req, res) => {
-    try {
-      const page = Number(req.query.page) || 1;
-      const limit = Number(req.query.limit) || 100;
-      const offset = (page - 1) * limit;
-      const sortby = req.query.sortby || "users_id";
-      const sort = req.query.sort || "ASC";
-      let result = await selectAllUsers({ limit, offset, sort, sortby });
-      const {
-        rows: [count],
-      } = await countData();
-      const totalData = parseInt(count.count);
-      const totalPage = Math.ceil(totalData / limit);
-      const pagination = {
-        currentPage: page,
-        limit: limit,
-        totalData: totalData,
-        totalPage: totalPage,
-      };
-      commonHelper.response(
-        res,
-        result.rows,
-        200,
-        "Get Users Data Success",
-        pagination
-      );
-    } catch (err) {
-      console.log(err);
-    }
+  // get profile
+  profile: async (req, res) => {
+    const email = req.payload.user_email;
+    const {
+      rows: [user],
+    } = await findEmail(email);
+    delete user.user_password;
+    commonHelper.response(res, user, 201, "Get Profile");
   },
 
-  getSelectUsers: async (req, res) => {
-    const users_id = String(req.params.id);
-    const { rowCount } = await findUUID(users_id);
-    if (!rowCount) {
-      return res.json({ message: "ID Not Found" });
-    }
-    selectUsers(users_id)
-      .then((result) => {
-        commonHelper.response(
-          res,
-          result.rows,
-          200,
-          "Get Users Detail Success"
-        );
-      })
-      .catch((err) => res.send(err));
-  },
-
+  // register
   registerUsers: async (req, res) => {
     const {
-      users_name,
-      users_email,
-      users_phone,
-      users_password,
-      users_confirmpassword,
+      user_name,
+      user_email,
+      user_phone,
+      user_password,
+      confirm_password,
     } = req.body;
-    const { rowCount } = await findEmail(users_email);
+    const { rowCount } = await findEmail(user_email);
     if (rowCount) {
       return res.json({ message: "Email Already Taken" });
     }
-
-    const users_id = uuidv4();
-    let users_photo = null;
-    if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path);
-      users_photo = result.secure_url;
-    }
+    const user_id = uuidv4();
     const schema = Joi.object().keys({
-      users_email: Joi.required(),
-      users_name: Joi.string().required(),
-      users_phone: Joi.string().min(8).max(14),
-      users_password: Joi.string().min(3).max(15).required(),
-      users_confirmpassword: Joi.ref("users_password"),
-      users_photo: Joi.string().allow(""),
+      user_email: Joi.required(),
+      user_name: Joi.string().required(),
+      user_phone: Joi.string().min(8).max(14),
+      user_password: Joi.string().min(4).max(15).required(),
+      confirm_password: Joi.ref("user_password"),
+      user_photo: Joi.string().allow(""),
     });
     const { error, value } = schema.validate(req.body, {
       abortEarly: false,
     });
     if (error) {
       console.log(error);
-      return res.send(error.details);
+      return res.send(error.details[0].message);
     }
-    const users_confirmpasswordHash = bcrypt.hashSync(users_confirmpassword);
+    const user_passwordHash = bcrypt.hashSync(confirm_password);
     const data = {
-      users_id,
-      users_name,
-      users_email,
-      users_phone,
-      users_confirmpasswordHash,
-      users_photo,
+      user_id,
+      user_email,
+      user_passwordHash,
+      user_name,
+      user_phone,
     };
     createUsers(data)
       .then((result) =>
@@ -117,36 +70,62 @@ let usersController = {
       .catch((err) => res.send(err));
   },
 
+  // login
+  loginUsers: async (req, res) => {
+    const { user_email, user_password } = req.body;
+    const {
+      rows: [user],
+    } = await findEmail(user_email);
+    if (!user) {
+      return res.json({ message: "Email Wrong" });
+    }
+    const isValidPassword = bcrypt.compareSync(
+      user_password,
+      user.user_password
+    );
+    if (!isValidPassword) {
+      return res.json({ message: "Password Wrong" });
+    }
+    delete user.user_password;
+    const payload = {
+      user_email: user.user_email,
+    };
+    user.token_user = authHelper.generateToken(payload);
+    user.refreshToken = authHelper.generateRefreshToken(payload);
+    commonHelper.response(res, user, 201, "Login Successfully");
+  },
+
+  // update
   updateUsers: async (req, res) => {
     try {
-      const { users_name, users_phone } = req.body;
-      const users_id = String(req.params.id);
-      const { rowCount } = await findUUID(users_id);
+      const { user_name, user_phone } = req.body;
+      const user_id = String(req.params.id);
+      const { rowCount } = await findID(user_id);
       if (!rowCount) {
         res.json({ message: "ID Not Found" });
       }
       const schema = Joi.object().keys({
-        users_name: Joi.string().required(),
-        users_phone: Joi.string().min(10).max(12),
-        users_photo: Joi.any(),
+        user_name: Joi.string().max(20),
+        user_phone: Joi.string().min(10).max(15),
+        user_photo: Joi.any(),
       });
       const { error, value } = schema.validate(req.body, {
         abortEarly: false,
       });
       if (error) {
         console.log(error);
-        return res.send(error.details);
+        return res.send(error.details[0].message);
       }
-      let users_photo = null;
+      let user_photo = null;
       if (req.file) {
         const result = await cloudinary.uploader.upload(req.file.path);
-        users_photo = result.secure_url;
+        user_photo = result.secure_url;
       }
       const data = {
-        users_id,
-        users_name,
-        users_phone,
-        users_photo,
+        user_id,
+        user_name,
+        user_phone,
+        user_photo,
       };
 
       updateUsers(data)
@@ -159,39 +138,34 @@ let usersController = {
     }
   },
 
+  // update password
   updatePasswordUsers: async (req, res) => {
     try {
-      const { users_password, users_confirmpassword } = req.body;
-      const users_id = String(req.params.id);
-      const { rowCount } = await findUUID(users_id);
+      const { user_password, confirm_password } = req.body;
+      const user_id = String(req.params.id);
+      const { rowCount } = await findID(user_id);
       if (!rowCount) {
         res.json({ message: "ID Not Found" });
       }
       const schema = Joi.object().keys({
-        users_password: Joi.string().min(3).max(15),
-        users_confirmpassword: Joi.ref("users_password"),
+        user_password: Joi.string().min(4).max(15),
+        confirm_password: Joi.ref("user_password"),
       });
       const { error, value } = schema.validate(req.body, {
         abortEarly: false,
       });
       if (error) {
         console.log(error);
-        return res.send(error.details);
+        return res.send(error.details[0].message);
       }
-      let users_photo = null;
-      if (req.file) {
-        const result = await cloudinary.uploader.upload(req.file.path);
-        users_photo = result.secure_url;
-      }
-      const users_confirmpasswordHash = bcrypt.hashSync(users_confirmpassword);
+      const user_passwordHash = bcrypt.hashSync(confirm_password);
       const data = {
-        users_id,
-        users_confirmpasswordHash,
+        user_id,
+        user_passwordHash,
       };
-
       updatePasswordUsers(data)
         .then((result) =>
-          commonHelper.response(res, result.rows, 200, "Update Users Success")
+          commonHelper.response(res, result.rows, 200, "Update Password Success")
         )
         .catch((err) => res.send(err));
     } catch (error) {
@@ -199,14 +173,15 @@ let usersController = {
     }
   },
 
+  // delete
   deleteUsers: async (req, res) => {
     try {
-      const users_id = String(req.params.id);
-      const { rowCount } = await findUUID(users_id);
+      const user_id = String(req.params.id);
+      const { rowCount } = await findID(user_id);
       if (!rowCount) {
         res.json({ message: "ID Not Found" });
       }
-      deleteUsers(users_id)
+      deleteUsers(user_id)
         .then((result) =>
           commonHelper.response(res, result.rows, 200, "Delete Users Success")
         )
@@ -216,30 +191,7 @@ let usersController = {
     }
   },
 
-  loginUsers: async (req, res) => {
-    const { users_email, users_confirmpassword } = req.body;
-    const {
-      rows: [users],
-    } = await findEmail(users_email);
-    if (!users) {
-      return res.json({ message: "Email Wrong" });
-    }
-    const isValidPassword = bcrypt.compareSync(
-      users_confirmpassword,
-      users.users_confirmpassword
-    );
-    if (!isValidPassword) {
-      return res.json({ message: "Password Wrong" });
-    }
-    delete users.users_confirmpassword;
-    const payload = {
-      users_email: users.users_email,
-    };
-    users.token_user = authHelper.generateToken(payload);
-    users.refreshToken = authHelper.generateRefreshToken(payload);
-    commonHelper.response(res, users, 201, "Login Successfuly");
-  },
-
+  // token
   refreshToken: (req, res) => {
     const refreshToken = req.body.refreshToken;
     const decoded = jwt.verify(refreshToken, process.env.SECRETE_KEY_JWT);
