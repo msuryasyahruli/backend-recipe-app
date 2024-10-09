@@ -29,7 +29,7 @@ const multerUpload = multer({
 
 // middleware
 const uploadUsers = (req, res, next) => {
-  const multerSingle = multerUpload.single("users_photo");
+  const multerSingle = multerUpload.single("user_photo");
   multerSingle(req, res, (err) => {
     if (err) {
       failed(res, {

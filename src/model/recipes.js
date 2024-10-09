@@ -3,91 +3,76 @@ const Pool = require("../config/db");
 // GET ALL RECIPES
 const selectAllRecipes = ({ limit, offset, sort, sortby }) => {
   return Pool.query(`
-  SELECT *
+  SELECT recipes.recipe_id, recipes.recipe_title, recipes.recipe_ingredients, recipes.recipe_thumbnail, recipes.recipe_video, recipes.created_at, users.user_name
   FROM recipes
+  LEFT JOIN users ON recipes.user_id = users.user_id
   ORDER BY ${sortby} ${sort} LIMIT ${limit} OFFSET ${offset}`);
 };
 
-// SELECT RICAPES BY ID
-const selectRecipesById = (recipes_id) => {
+// SELECT RECIPES DETAIL
+const selectRecipesDetail = (recipe_id) => {
   return Pool.query(`
-  SELECT *
+  SELECT recipes.recipe_id, recipes.recipe_title, recipes.recipe_ingredients, recipes.recipe_thumbnail, recipes.recipe_video, recipes.created_at, users.user_name
   FROM recipes
-  WHERE recipes.recipes_id='${recipes_id}'`);
-};
-
-// SELECT RICAPES BY USERS ID
-const selectRecipesByUserId = (users_id) => {
-  return Pool.query(`
-  SELECT *
-  FROM recipes
-  LEFT JOIN users ON recipes.users_id = users.users_id
-  WHERE recipes.users_id='${users_id}'`);
+  LEFT JOIN users ON recipes.user_id = users.user_id
+  WHERE recipes.recipe_id='${recipe_id}'`);
 };
 
 // INSERT RECIPES
 const insertRecipes = (data) => {
   const {
-    recipes_id,
-    recipes_title,
-    recipes_ingredients,
-    recipes_photo,
-    recipes_video,
-    users_id,
+    recipe_id,
+    recipe_title,
+    recipe_ingredients,
+    recipe_thumbnail,
+    recipe_video,
+    category_id,
+    user_id,
   } = data;
   return Pool.query(
-    `INSERT INTO recipes (recipes_id, recipes_title, recipes_ingredients, recipes_photo, recipes_video, users_id) VALUES('${recipes_id}', '${recipes_title}', '${recipes_ingredients}', '${recipes_photo}', '${recipes_video}', '${users_id}')`
+    `INSERT INTO recipes (recipe_id, recipe_title, recipe_ingredients, recipe_thumbnail, recipe_video, category_id, user_id) VALUES('${recipe_id}', '${recipe_title}', '${recipe_ingredients}', '${recipe_thumbnail}', '${recipe_video}', '${category_id}', '${user_id}')`
   );
 };
 
 // UPDATE RECIPES
 const updateRecipes = (data) => {
   const {
-    recipes_id,
-    recipes_title,
-    recipes_ingredients,
-    recipes_photo,
-    recipes_video,
+    recipe_id,
+    recipe_title,
+    recipe_ingredients,
+    recipe_thumbnail,
+    recipe_video,
   } = data;
-  return Pool.query(
-    `UPDATE recipes SET recipes_title='${recipes_title}', recipes_ingredients='${recipes_ingredients}' ,recipes_photo='${recipes_photo}',recipes_video='${recipes_video}' WHERE recipes_id='${recipes_id}'`
-  );
+  const fields = [];
+  if (recipe_title) fields.push(`recipe_title='${recipe_title}'`);
+  if (recipe_ingredients)
+    fields.push(`recipe_ingredients='${recipe_ingredients}'`);
+  if (recipe_thumbnail) fields.push(`recipe_thumbnail='${recipe_thumbnail}'`);
+  if (recipe_video) fields.push(`recipe_video='${recipe_video}'`);
+  if (fields.length === 0) {
+    return null;
+  }
+  const query = `UPDATE recipes SET ${fields.join(
+    ", "
+  )} WHERE recipe_id='${recipe_id}'`;
+  return Pool.query(query);
 };
 
 // DELETE RECIPES
-const deleteRecipes = (recipes_id) => {
-  return Pool.query(`DELETE FROM recipes WHERE recipes_id='${recipes_id}'`);
+const deleteRecipes = (recipe_id) => {
+  return Pool.query(`DELETE FROM recipes WHERE recipe_id='${recipe_id}'`);
 };
 
-const deleteRecipesByUsersId = (users_id, recipes_id) => {
-  return Pool.query(`DELETE FROM recipes WHERE recipes.users_id='${users_id}' AND recipes.recipes_id='${recipes_id}'`);
-};
 // COUNT DATA
 const countData = () => {
   return Pool.query("SELECT COUNT(*) FROM recipes");
 };
 
 // FIND UUID
-const findUUID = (recipes_id) => {
+const findID = (recipe_id) => {
   return new Promise((resolve, reject) =>
     Pool.query(
-      `SELECT recipes FROM recipes WHERE recipes_id='${recipes_id}'`,
-      (error, result) => {
-        if (!error) {
-          resolve(result);
-        } else {
-          reject(error);
-        }
-      }
-    )
-  );
-};
-
-// FIND UUID
-const findUsersId = (users_id) => {
-  return new Promise((resolve, reject) =>
-    Pool.query(
-      `SELECT recipes FROM recipes WHERE users_id='${users_id}'`,
+      `SELECT recipes FROM recipes WHERE recipe_id='${recipe_id}'`,
       (error, result) => {
         if (!error) {
           resolve(result);
@@ -101,13 +86,10 @@ const findUsersId = (users_id) => {
 
 module.exports = {
   selectAllRecipes,
-  selectRecipesById,
-  selectRecipesByUserId,
+  selectRecipesDetail,
   insertRecipes,
   updateRecipes,
   deleteRecipes,
-  deleteRecipesByUsersId,
   countData,
-  findUUID,
-  findUsersId,
+  findID,
 };

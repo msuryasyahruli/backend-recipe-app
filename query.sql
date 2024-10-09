@@ -15,10 +15,10 @@ CREATE TABLE recipes
     recipe_id VARCHAR PRIMARY KEY,
     recipe_title VARCHAR(255),
     recipe_ingredients VARCHAR(255) ,
-    recipe_photo VARCHAR(255),
+    recipe_thumbnail VARCHAR(255),
     recipe_video VARCHAR(255),
-    categorys_id VARCHAR,
-    users_id VARCHAR,
+    category_id VARCHAR,
+    user_id VARCHAR,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -26,7 +26,7 @@ CREATE TABLE comments
 (
     comment_id VARCHAR PRIMARY KEY,
     recipe_id VARCHAR,
-    users_id VARCHAR,
+    user_id VARCHAR,
     comment_text VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -40,7 +40,7 @@ CREATE TABLE likeds
 (
     liked_id VARCHAR PRIMARY KEY,
     recipe_id VARCHAR,
-    users_id VARCHAR,
+    user_id VARCHAR,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -48,6 +48,6 @@ CREATE TABLE bookmarks
 (
     bookmark_id VARCHAR PRIMARY KEY,
     recipe_id VARCHAR,
-    users_id VARCHAR,
+    user_id VARCHAR,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

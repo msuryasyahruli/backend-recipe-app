@@ -5,25 +5,23 @@ const Joi = require("joi");
 const cloudinary = require("../middlewares/cloudinary");
 const {
   selectAllRecipes,
-  selectRecipesById,
-  selectRecipesByUserId,
+  selectRecipesDetail,
   insertRecipes,
   updateRecipes,
   deleteRecipes,
-  deleteRecipesByUsersId,
   countData,
-  findUUID,
-  findUsersId,
+  findID,
 } = require("../model/recipes");
 
 const recipesController = {
+  // get all
   getAllRecipes: async (req, res) => {
     try {
       const page = Number(req.query.page) || 1;
-      const limit = Number(req.query.limit) || 100;
+      const limit = Number(req.query.limit) || 10;
       const offset = (page - 1) * limit;
-      const sortby = req.query.sortby || "recipes_created";
-      const sort = req.query.sort || "ASC";
+      const sortby = req.query.sortby || "created_at";
+      const sort = req.query.sort || "desc";
       const result = await selectAllRecipes({ limit, offset, sort, sortby });
       const {
         rows: [count],
@@ -41,7 +39,7 @@ const recipesController = {
         res,
         result.rows,
         200,
-        "get data success",
+        "Get Data Success",
         pagination
       );
     } catch (error) {
@@ -49,98 +47,89 @@ const recipesController = {
     }
   },
 
-  getRecipesById: (req, res, next) => {
-    const recipes_id = String(req.params.id);
-    selectRecipesById(recipes_id)
+  // get detail
+  getRecipesDetail: async (req, res, next) => {
+    const recipe_id = String(req.params.id);
+    const { rowCount } = await findID(recipe_id);
+    if (!rowCount) {
+      return next(createError(403, "ID is Not Found"));
+    }
+    selectRecipesDetail(recipe_id)
       .then((result) =>
-        commonHelper.response(res, result.rows, 200, "get data success")
+        commonHelper.response(res, result.rows[0], 200, "Get Data Success")
       )
       .catch((err) => res.send(err));
   },
 
-  getRecipesByUserId: (req, res, next) => {
-    const users_id = String(req.params.users_id);
-    selectRecipesByUserId(users_id)
-      .then((result) =>
-        commonHelper.response(res, result.rows, 200, "get data success")
-      )
-      .catch((err) => res.send(err));
-  },
-
+  // create
   insertRecipes: async (req, res) => {
-    const { recipes_title, recipes_ingredients, users_id, recipes_video } =
+    const { recipe_title, recipe_ingredients, user_id, recipe_video, category_id } =
       req.body;
-    const recipes_id = uuidv4();
-    let recipes_photo = null;
+    const recipe_id = uuidv4();
+    let recipe_thumbnail = null;
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path);
-      recipes_photo = result.secure_url;
+      recipe_thumbnail = result.secure_url;
     }
     const data = {
-      recipes_id,
-      recipes_title,
-      recipes_ingredients,
-      recipes_photo,
-      recipes_video,
-      users_id,
+      recipe_id,
+      recipe_title,
+      recipe_ingredients,
+      recipe_thumbnail,
+      recipe_video,
+      category_id,
+      user_id,
     };
     insertRecipes(data)
-      .then((result) =>
-        commonHelper.response(res, result.rows, 201, "Create Product Success")
+      .then(() =>
+        commonHelper.response(res, data, 201, "Create Recipe Success")
       )
       .catch((err) => res.send(err));
   },
 
+  // update
   updateRecipes: async (req, res) => {
     try {
-      const { recipes_title, recipes_ingredients, recipes_video } = req.body;
-      const recipes_id = String(req.params.id);
-      const { rowCount } = await findUUID(recipes_id);
+      const { recipe_title, recipe_ingredients, recipe_video } = req.body;
+      const recipe_id = String(req.params.id);
+      const { rowCount } = await findID(recipe_id);
       if (!rowCount) {
         return next(createError(403, "ID is Not Found"));
       }
 
-      let recipes_photo = null;
+      let recipe_thumbnail = null;
       if (req.file) {
         const result = await cloudinary.uploader.upload(req.file.path);
-        recipes_photo = result.secure_url;
+        recipe_thumbnail = result.secure_url;
       }
 
       const data = {
-        recipes_id,
-        recipes_title,
-        recipes_ingredients,
-        recipes_photo,
-        recipes_video,
+        recipe_id,
+        recipe_title,
+        recipe_ingredients,
+        recipe_thumbnail,
+        recipe_video,
       };
       updateRecipes(data)
-        .then((result) =>
-          commonHelper.response(res, result.rows, 200, "Product updated")
+        .then(() =>
+          commonHelper.response(res, data, 200, "Recipe Updated")
         )
         .catch((err) => res.send(err));
     } catch (error) {
       console.log(error);
     }
   },
+
+  // delete
   deleteRecipe: async (req, res, next) => {
     try {
-      const recipes_id = String(req.params.id);
-      const { rowCount } = await findUUID(recipes_id);
+      const recipe_id = String(req.params.id);
+      const { rowCount } = await findID(recipe_id);
       if (!rowCount) {
         return next(createError(403, "ID is Not Found"));
       }
-      await deleteRecipes(recipes_id);
-      commonHelper.response(res, {}, 200, "Recipe deleted");
-    } catch (error) {
-      next(error);
-    }
-  },
-  deleteRecipesByUsersId: async (req, res, next) => {
-    try {
-      const users_id = String(req.params.users_id);
-      const recipes_id = String(req.params.recipes_id);
-      await deleteRecipesByUsersId(users_id,recipes_id);
-      commonHelper.response(res, {}, 200, "Recipe deleted");
+      await deleteRecipes(recipe_id);
+      commonHelper.response(res, {}, 200, "Recipe Deleted");
     } catch (error) {
       next(error);
     }

@@ -29,7 +29,7 @@ const multerUpload = multer({
 
 // middleware
 const uploadRecipes = (req, res, next) => {
-  const multerSingle = multerUpload.single("recipes_photo");
+  const multerSingle = multerUpload.single("recipe_thumbnail");
   multerSingle(req, res, (err) => {
     if (err) {
       failed(res, {
