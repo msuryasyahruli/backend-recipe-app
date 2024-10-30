@@ -5,12 +5,13 @@ const Joi = require("joi");
 const cloudinary = require("../middlewares/cloudinary");
 const {
   selectAllRecipes,
-  selectRecipesDetail,
+  selectDetailRecipes,
   insertRecipes,
   updateRecipes,
   deleteRecipes,
   countData,
   findID,
+  selectMyRecipes,
 } = require("../model/recipes");
 
 const recipesController = {
@@ -22,7 +23,8 @@ const recipesController = {
       const offset = (page - 1) * limit;
       const sortby = req.query.sortby || "created_at";
       const sort = req.query.sort || "desc";
-      const result = await selectAllRecipes({ limit, offset, sort, sortby });
+      const search = req.query.search || "";
+      const result = await selectAllRecipes({ limit, offset, sort, sortby, search });
       const {
         rows: [count],
       } = await countData();
@@ -48,15 +50,25 @@ const recipesController = {
   },
 
   // get detail
-  getRecipesDetail: async (req, res, next) => {
+  getDetailRecipes: async (req, res, next) => {
     const recipe_id = String(req.params.id);
     const { rowCount } = await findID(recipe_id);
     if (!rowCount) {
       return next(createError(403, "ID is Not Found"));
     }
-    selectRecipesDetail(recipe_id)
+    selectDetailRecipes(recipe_id)
       .then((result) =>
         commonHelper.response(res, result.rows[0], 200, "Get Data Success")
+      )
+      .catch((err) => res.send(err));
+  },
+
+  // get by user
+  getMyRecipes: async (req, res) => {
+    const user_id = String(req.params.id);
+    selectMyRecipes(user_id)
+      .then((result) =>
+        commonHelper.response(res, result.rows, 200, "Get Data Success")
       )
       .catch((err) => res.send(err));
   },

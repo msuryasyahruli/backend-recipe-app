@@ -3,10 +3,11 @@ const Pool = require("../config/db");
 // SELECT BY USER
 const selectLikeds = (user_id) => {
   return Pool.query(`
-  SELECT likeds.liked_id, users.user_name as recipe_by, recipes.recipe_title, recipes.recipe_thumbnail, likeds.created_at
+  SELECT likeds.liked_id, users.user_name as recipe_by, recipes.recipe_title, recipes.recipe_thumbnail, categories.category_name, likeds.created_at
   FROM likeds
   LEFT JOIN recipes ON likeds.recipe_id = recipes.recipe_id
   LEFT JOIN users ON recipes.user_id = users.user_id
+  LEFT JOIN categories ON recipes.category_id = categories.category_id
   WHERE likeds.user_id = '${user_id}'
   `);
 };

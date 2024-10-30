@@ -1,23 +1,34 @@
 const Pool = require("../config/db");
 
 // GET ALL RECIPES
-const selectAllRecipes = ({ limit, offset, sort, sortby }) => {
+const selectAllRecipes = ({ limit, offset, sort, sortby, search }) => {
   return Pool.query(`
   SELECT recipes.recipe_id, recipes.recipe_title, users.user_name as recipe_by, recipes.recipe_ingredients, recipes.recipe_thumbnail, recipes.recipe_video, categories.category_name, recipes.created_at
   FROM recipes
   LEFT JOIN users ON recipes.user_id = users.user_id
   LEFT JOIN categories ON recipes.category_id = categories.category_id
+  WHERE recipes.recipe_title ILIKE '%${search}%'
   ORDER BY ${sortby} ${sort} LIMIT ${limit} OFFSET ${offset}`);
 };
 
-// SELECT RECIPES DETAIL
-const selectRecipesDetail = (recipe_id) => {
+// SELECT DETAIL RECIPES
+const selectDetailRecipes = (recipe_id) => {
   return Pool.query(`
   SELECT recipes.recipe_id, recipes.recipe_title, users.user_name as recipe_by, recipes.recipe_ingredients, recipes.recipe_thumbnail, recipes.recipe_video, categories.category_name, recipes.created_at
   FROM recipes
   LEFT JOIN users ON recipes.user_id = users.user_id
   LEFT JOIN categories ON recipes.category_id = categories.category_id
   WHERE recipes.recipe_id='${recipe_id}'`);
+};
+
+// SELECT MY RECIPES
+const selectMyRecipes = (user_id) => {
+  return Pool.query(`
+  SELECT recipes.recipe_id, recipes.recipe_title, users.user_name as recipe_by, recipes.recipe_thumbnail, categories.category_name, recipes.created_at
+  FROM recipes
+  LEFT JOIN users ON recipes.user_id = users.user_id
+  LEFT JOIN categories ON recipes.category_id = categories.category_id
+  WHERE recipes.user_id ILIKE '%${user_id}%'`);
 };
 
 // INSERT RECIPES
@@ -88,7 +99,8 @@ const findID = (recipe_id) => {
 
 module.exports = {
   selectAllRecipes,
-  selectRecipesDetail,
+  selectDetailRecipes,
+  selectMyRecipes,
   insertRecipes,
   updateRecipes,
   deleteRecipes,
