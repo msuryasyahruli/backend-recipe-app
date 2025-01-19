@@ -14,7 +14,7 @@ app.use(xss());
 app.use('/img', express.static('upload'))
 
 //PORT
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 7474;
 
 //EXECUTE
 app.use("/", mainRouter);
