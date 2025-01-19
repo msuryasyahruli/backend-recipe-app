@@ -2,15 +2,9 @@ const Pool = require("../config/db");
 
 //POST USERS
 const createUsers = (data) => {
-  const {
-    user_id,
-    user_email,
-    user_passwordHash,
-    user_name,
-    user_phone,
-  } = data;
+  const { user_id, user_email, user_password, user_name, user_phone } = data;
   return Pool.query(`INSERT INTO users(user_id, user_email, user_password, user_name, user_phone) 
-    VALUES ('${user_id}','${user_email}','${user_passwordHash}','${user_name}','${user_phone}')`);
+    VALUES ('${user_id}','${user_email}','${user_password}','${user_name}','${user_phone}')`);
 };
 
 //DELETE USERS
@@ -27,7 +21,7 @@ const updateUsers = (data) => {
   if (user_phone) updates.push(`user_phone = '${user_phone}'`);
   if (user_photo) updates.push(`user_photo = '${user_photo}'`);
 
-  const setClause = updates.join(', ');
+  const setClause = updates.join(", ");
 
   return Pool.query(
     `UPDATE users SET ${setClause} WHERE user_id = '${user_id}'`
@@ -36,10 +30,9 @@ const updateUsers = (data) => {
 
 //PUT UPDATE PASSWORD
 const updatePasswordUsers = (data) => {
-  const { user_id, user_passwordHash } =
-    data;
+  const { user_id, user_password } = data;
   return Pool.query(
-    `UPDATE users SET user_password = '${user_passwordHash}' WHERE user_id = '${user_id}'`
+    `UPDATE users SET user_password = '${user_password}' WHERE user_id = '${user_id}'`
   );
 };
 
@@ -75,11 +68,6 @@ const findEmail = (user_email) => {
   );
 };
 
-//COUNT DATA
-const countData = () => {
-  return Pool.query(`SELECT COUNT(*) FROM users`);
-};
-
 module.exports = {
   deleteUsers,
   createUsers,
@@ -87,5 +75,4 @@ module.exports = {
   updatePasswordUsers,
   findID,
   findEmail,
-  countData,
 };

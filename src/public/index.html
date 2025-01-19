@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Food Recipe API Server</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header>
+    <h1>Food Recipe API Server</h1>
+  </header>
+  <main>
+    <section>
+      <h2>Congrats!</h2>
+      <p>✨ You're successfully running API Server ✨</p>
+    </section>
+    <section>
+      <h3>Resources</h3>
+      <ul>
+        <li><a href="/users/profile">/users</a></li>
+        <li><a href="/recipes">/recipes</a></li>
+        <li><a href="/categories">/categories</a></li>
+        <li><a href="/comments/:id">/comments/:id</a></li>
+        <li><a href="/likes/:id">/likes/:id</a></li>
+        <li><a href="/bookmarks/:id">/bookmarks/:id</a></li>
+      </ul>
+    </section>
+    <section>
+      <h3>Custom Routes</h3>
+      <ul>
+        <li><code>/*</code> → <code>/$1</code></li>
+        <li><code>/recipes/:resource/:id/show</code> → <code>/:resource/:id</code></li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

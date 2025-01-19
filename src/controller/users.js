@@ -1,10 +1,11 @@
 const { v4: uuidv4 } = require("uuid");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const Joi = require("joi");
 const authHelper = require("../helper/auth");
 const commonHelper = require("../helper/common");
 const cloudinary = require("../middlewares/cloudinary");
+const createError = require("http-errors");
+
 let {
   createUsers,
   updateUsers,
@@ -12,115 +13,127 @@ let {
   deleteUsers,
   findID,
   findEmail,
-  countData,
 } = require("../model/users");
+const schema = require("./validationSchema");
 
-let usersController = {
+const usersController = {
   // get profile
   profile: async (req, res) => {
-    const email = req.payload.user_email;
-    const {
-      rows: [user],
-    } = await findEmail(email);
-    delete user.user_password;
-    commonHelper.response(res, user, 201, "Get Profile");
+    try {
+      const email = req.payload.user_email;
+
+      const {
+        rows: [user],
+      } = await findEmail(email);
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      delete user.user_password;
+
+      commonHelper.response(res, user, 200, "Get Profile Success");
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error", error });
+    }
   },
 
   // register
-  registerUsers: async (req, res) => {
-    const {
-      user_name,
-      user_email,
-      user_phone,
-      user_password,
-      confirm_password,
-    } = req.body;
-    const { rowCount } = await findEmail(user_email);
-    if (rowCount) {
-      return res.json({ message: "Email Already Taken" });
+  registerUsers: async (req, res, next) => {
+    try {
+      const { error } = schema.userSchema.validate(req.body);
+      if (error) {
+        return next(createError(400, error.details[0].message));
+      }
+
+      const {
+        user_name,
+        user_email,
+        user_phone,
+        user_password,
+        confirm_password,
+      } = req.body;
+      const { rowCount } = await findEmail(user_email);
+      if (rowCount) {
+        return next(createError(409, "Email Already Taken"));
+      }
+
+      if (user_password !== confirm_password) {
+        return next(createError(400, "Passwords do not match"));
+      }
+
+      const user_id = uuidv4();
+      const user_passwordHash = bcrypt.hashSync(user_password);
+
+      const data = {
+        user_id,
+        user_email,
+        user_password: user_passwordHash,
+        user_name,
+        user_phone,
+      };
+
+      await createUsers(data);
+
+      commonHelper.response(res, {}, 201, "Register Successfully");
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error", error });
     }
-    const user_id = uuidv4();
-    const schema = Joi.object().keys({
-      user_email: Joi.required(),
-      user_name: Joi.string().required(),
-      user_phone: Joi.string().min(8).max(14),
-      user_password: Joi.string().min(4).max(15).required(),
-      confirm_password: Joi.ref("user_password"),
-      user_photo: Joi.string().allow(""),
-    });
-    const { error, value } = schema.validate(req.body, {
-      abortEarly: false,
-    });
-    if (error) {
-      console.log(error);
-      return res.send(error.details[0].message);
-    }
-    const user_passwordHash = bcrypt.hashSync(confirm_password);
-    const data = {
-      user_id,
-      user_email,
-      user_passwordHash,
-      user_name,
-      user_phone,
-    };
-    createUsers(data)
-      .then((result) =>
-        commonHelper.response(res, result.rows, 201, "Create User Success")
-      )
-      .catch((err) => res.send(err));
   },
 
   // login
-  loginUsers: async (req, res) => {
-    const { user_email, user_password } = req.body;
-    const {
-      rows: [user],
-    } = await findEmail(user_email);
-    if (!user) {
-      return res.json({ message: "Email Wrong" });
+  loginUsers: async (req, res, next) => {
+    try {
+      const { user_email, user_password } = req.body;
+      const {
+        rows: [user],
+      } = await findEmail(user_email);
+      if (!user) {
+        return next(createError(401, "Email is incorrect"));
+      }
+
+      const isValidPassword = bcrypt.compareSync(
+        user_password,
+        user.user_password
+      );
+      if (!isValidPassword) {
+        return next(createError(401, "Password is incorrect"));
+      }
+
+      delete user.user_password;
+
+      const payload = { user_email: user.user_email };
+      user.token_user = authHelper.generateToken(payload);
+      user.refreshToken = authHelper.generateRefreshToken(payload);
+
+      const data = { token: user.token_user, refreshToken: user.refreshToken };
+      commonHelper.response(res, data, 200, "Login Successfully");
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error", error });
     }
-    const isValidPassword = bcrypt.compareSync(
-      user_password,
-      user.user_password
-    );
-    if (!isValidPassword) {
-      return res.json({ message: "Password Wrong" });
-    }
-    delete user.user_password;
-    const payload = {
-      user_email: user.user_email,
-    };
-    user.token_user = authHelper.generateToken(payload);
-    user.refreshToken = authHelper.generateRefreshToken(payload);
-    commonHelper.response(res, user, 201, "Login Successfully");
   },
 
   // update
-  updateUsers: async (req, res) => {
+  updateUsers: async (req, res, next) => {
     try {
       const { user_name, user_phone } = req.body;
       const user_id = String(req.params.id);
+
       const { rowCount } = await findID(user_id);
       if (!rowCount) {
-        res.json({ message: "ID Not Found" });
+        return next(createError(404, "User ID Not Found"));
       }
-      const schema = Joi.object().keys({
-        user_name: Joi.string().max(20),
-        user_phone: Joi.string().min(10).max(15),
-        user_photo: Joi.any(),
-      });
-      const { error, value } = schema.validate(req.body, {
-        abortEarly: false,
-      });
-      if (error) {
-        console.log(error);
-        return res.send(error.details[0].message);
-      }
+
       let user_photo = null;
+
       if (req.file) {
         const result = await cloudinary.uploader.upload(req.file.path);
         user_photo = result.secure_url;
       }
+
       const data = {
         user_id,
         user_name,
@@ -128,58 +141,56 @@ let usersController = {
         user_photo,
       };
 
-      updateUsers(data)
-        .then((result) =>
-          commonHelper.response(res, result.rows, 200, "Update Users Success")
-        )
-        .catch((err) => res.send(err));
+      await updateUsers(data);
+
+      commonHelper.response(res, data, 200, "Profile updated");
     } catch (error) {
-      console.log(error);
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error", error });
     }
   },
 
   // update password
-  updatePasswordUsers: async (req, res) => {
+  updatePasswordUsers: async (req, res, next) => {
     try {
+      const { error } = schema.passwordSchema.validate(req.body);
+      if (error) {
+        return next(createError(400, error.details[0].message));
+      }
+
       const { user_password, confirm_password } = req.body;
       const user_id = String(req.params.id);
       const { rowCount } = await findID(user_id);
       if (!rowCount) {
-        res.json({ message: "ID Not Found" });
+        return next(createError(404, "User ID Not Found"));
       }
-      const schema = Joi.object().keys({
-        user_password: Joi.string().min(4).max(15),
-        confirm_password: Joi.ref("user_password"),
-      });
-      const { error, value } = schema.validate(req.body, {
-        abortEarly: false,
-      });
-      if (error) {
-        console.log(error);
-        return res.send(error.details[0].message);
+      if (user_password !== confirm_password) {
+        return next(createError(400, "Passwords do not match"));
       }
+
       const user_passwordHash = bcrypt.hashSync(confirm_password);
+
       const data = {
         user_id,
-        user_passwordHash,
+        user_password: user_passwordHash,
       };
-      updatePasswordUsers(data)
-        .then((result) =>
-          commonHelper.response(res, result.rows, 200, "Update Password Success")
-        )
-        .catch((err) => res.send(err));
+
+      await updatePasswordUsers(data);
+
+      commonHelper.response(res, {}, 200, "Password updated");
     } catch (error) {
-      console.log(error);
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error", error });
     }
   },
 
   // delete
-  deleteUsers: async (req, res) => {
+  deleteUsers: async (req, res, next) => {
     try {
       const user_id = String(req.params.id);
       const { rowCount } = await findID(user_id);
       if (!rowCount) {
-        res.json({ message: "ID Not Found" });
+        return next(createError(404, "User ID Not Found"));
       }
       deleteUsers(user_id)
         .then((result) =>
@@ -188,6 +199,7 @@ let usersController = {
         .catch((err) => res.send(err));
     } catch (error) {
       console.log(error);
+      res.status(500).json({ message: "Internal Server Error", error });
     }
   },
 

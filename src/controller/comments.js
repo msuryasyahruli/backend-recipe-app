@@ -7,75 +7,107 @@ const {
   deleteComments,
   findID,
 } = require("../model/comments");
+const { findID: findRecipeID } = require("../model/recipes");
+const schema = require("./validationSchema");
+const createError = require("http-errors");
 
 const commentsController = {
   // get data
-  getSelectComments: async (req, res) => {
-    const recipe_id = String(req.params.id);
+  getComments: async (req, res) => {
+    try {
+      const recipe_id = String(req.params.id);
 
-    selectComments(recipe_id)
-      .then((result) =>
-        commonHelper.response(res, result.rows, 200, "Get Data Success")
-      )
-      .catch((err) => res.send(err));
+      const { rowCount: recipeExists } = await findRecipeID(recipe_id);
+      if (!recipeExists) {
+        return res.status(404).json({ message: "Recipe Not Found" });
+      }
+
+      const result = await selectComments(recipe_id);
+      commonHelper.response(res, result.rows, 200, "Get Data Success");
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error", error });
+    }
   },
 
   // create data
-  insertcomments: async (req, res) => {
-    const { recipe_id, user_id, comment_text } = req.body;
-    const comment_id = uuidv4();
-    const data = {
-      comment_id,
-      recipe_id,
-      user_id,
-      comment_text,
-    };
-    insertComments(data)
-      .then((result) =>
-        commonHelper.response(res, result.rows, 201, "Add Comment Success")
-      )
-      .catch((err) => res.send(err));
+  insertComments: async (req, res, next) => {
+    try {
+      const { error } = schema.commentSchema.validate(req.body);
+      if (error) {
+        return next(createError(400, error.details[0].message));
+      }
+
+      const { recipe_id, user_id, comment_text } = req.body;
+      const comment_id = uuidv4();
+
+      const { rowCount: recipeExists } = await findRecipeID(recipe_id);
+      if (!recipeExists) {
+        return res.status(404).json({ message: "Recipe Not Found" });
+      }
+
+      const data = {
+        comment_id,
+        recipe_id,
+        user_id,
+        comment_text,
+      };
+
+      const result = await insertComments(data);
+
+      commonHelper.response(res, result.rows, 201, "Comment Added");
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error", error });
+    }
   },
 
   // update data
-  updateComments: async (req, res) => {
+  updateComments: async (req, res, next) => {
     try {
-      const { comment_text } = req.body;
       const comment_id = String(req.params.id);
+
       const { rowCount } = await findID(comment_id);
       if (!rowCount) {
-        res.json({ message: "ID Not Found" });
+        return next(createError(404, "Comment ID Not Found"));
       }
+
+      const { error } = schema.updateCommentSchema.validate(req.body);
+      if (error) {
+        return next(createError(400, error.details[0].message));
+      }
+
+      const { comment_text } = req.body;
+
       const data = {
         comment_id,
         comment_text,
       };
-      updateComments(data)
-        .then((result) =>
-          commonHelper.response(res, result.rows, 200, "Update Comment Success")
-        )
-        .catch((err) => res.send(err));
+
+      await updateComments(data);
+
+      commonHelper.response(res, [], 200, "Comment Updated");
     } catch (error) {
-      console.log(error);
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error", error });
     }
   },
 
   // delete data
-  deleteComments: async (req, res, next) => {
+  deleteComments: async (req, res) => {
     try {
       const comment_id = String(req.params.id);
       const { rowCount } = await findID(comment_id);
 
       if (!rowCount) {
-        res.json({ message: "ID Not Found" });
+        return res.status(404).json({ message: "ID Not Found" });
       }
-      deleteComments(comment_id)
-        .then((result) =>
-          commonHelper.response(res, result.rows, 200, "Delete Comment Success")
-        )
-        .catch((err) => res.send(err));
+
+      const result = await deleteComments(comment_id);
+      commonHelper.response(res, result.rows, 200, "Comment Deleted");
     } catch (error) {
-      console.log(error);
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error", error });
     }
   },
 };

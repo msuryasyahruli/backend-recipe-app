@@ -36,9 +36,9 @@ CREATE TABLE categories (
     category_name VARCHAR(255)
 );
 
-CREATE TABLE likeds
+CREATE TABLE likes
 (
-    liked_id VARCHAR PRIMARY KEY,
+    like_id VARCHAR PRIMARY KEY,
     recipe_id VARCHAR,
     user_id VARCHAR,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

@@ -1,5 +1,5 @@
 const multer = require("multer");
-const { failed } = require("../helper/common");
+
 // manajemen file
 const multerUpload = multer({
   storage: multer.diskStorage({}),
@@ -30,16 +30,11 @@ const multerUpload = multer({
 // middleware
 const uploadRecipes = (req, res, next) => {
   const multerSingle = multerUpload.single("recipe_thumbnail");
-  multerSingle(req, res, (err) => {
-    if (err) {
-      failed(res, {
-        code: 500,
-        status: "error",
-        message: err.message,
-        error: [],
-      });
-    } else {
+  multerSingle(req, res, (error) => {
+    if (!error) {
       next();
+    } else {
+      res.status(500).json({ message: error.message });
     }
   });
 };

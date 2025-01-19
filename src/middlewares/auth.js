@@ -14,7 +14,6 @@ const protect = (req, res, next) => {
       });
     }
   } catch (error) {
-    console.log(error);
     if (error && error.name === "JsonWebTokenError") {
       next(new createError(400, "Token invalid"));
     } else if (error && error.name === "TokenExpiredError") {

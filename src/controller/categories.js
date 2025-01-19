@@ -1,3 +1,4 @@
+const createError = require("http-errors");
 const commonHelper = require("../helper/common");
 const {
   selectCategories,
@@ -10,54 +11,60 @@ const { v4: uuidv4 } = require("uuid");
 
 const categoriesController = {
   // get data
-  getSelectCategories: async (req, res) => {
-    selectCategories()
-      .then((result) =>
-        commonHelper.response(res, result.rows, 200, "Get Data Success")
-      )
-      .catch((err) => res.send(err));
+  getCategories: async (req, res) => {
+    try {
+      const result = await selectCategories();
+      commonHelper.response(res, result.rows, 200, "Get Data Success");
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error", error });
+    }
   },
 
   // create data
-  insertCategories: async (req, res) => {
-    const { category_name } = req.body;
-    const category_id = uuidv4();
-    const data = {
-      category_id,
-      category_name,
-    };
-    insertCategories(data)
-      .then(() =>
-        commonHelper.response(res, data, 201, "Category Created")
-      )
-      .catch((err) => res.send(err));
-  },
-
-  // update data
-  updateCategories: async (req, res) => {
+  insertCategories: async (req, res, next) => {
     try {
-      const category_id = String(req.params.id);
-      const { category_name } = req.body;
-      const { rowCount } = await findID(category_id);
-      if (!rowCount) {
-        res.json({ message: "ID Not Found" });
+      const { error } = categorySchema.validate(req.body);
+      if (error) {
+        return next(createError(400, error.details[0].message));
       }
+
+      const { category_name } = req.body;
+      const category_id = uuidv4();
       const data = {
         category_id,
         category_name,
       };
-      updateCategories(data)
-        .then((result) =>
-          commonHelper.response(
-            res,
-            result.rows,
-            200,
-            "Update Category Success"
-          )
-        )
-        .catch((err) => res.send(err));
+
+      await insertCategories(data);
+      commonHelper.response(res, data, 201, "Category created");
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error", error });
+    }
+  },
+
+  // update data
+  updateCategories: async (req, res, next) => {
+    try {
+      const category_id = String(req.params.id);
+      
+      const { category_name } = req.body;
+      const { rowCount } = await findID(category_id);
+      if (!rowCount) {
+        return next(createError(404, "Category is not found"));
+      }
+
+      const data = {
+        category_id,
+        category_name,
+      };
+
+      await updateCategories(data);
+      commonHelper.response(res, result.rows, 200, "Category updated");
     } catch (error) {
       console.log(error);
+      res.status(500).json({ message: "Internal Server Error", error });
     }
   },
 
@@ -65,23 +72,17 @@ const categoriesController = {
   deleteCategories: async (req, res, next) => {
     try {
       const category_id = String(req.params.id);
-      const { rowCount } = await findID(category_id);
 
+      const { rowCount } = await findID(category_id);
       if (!rowCount) {
-        res.json({ message: "ID Not Found" });
+        return next(createError(404, "Category is not found"));
       }
-      deleteCategories(category_id)
-        .then((result) =>
-          commonHelper.response(
-            res,
-            result.rows,
-            200,
-            "Delete Category Success"
-          )
-        )
-        .catch((err) => res.send(err));
+
+      await deleteCategories(category_id);
+      commonHelper.response(res, result.rows, 200, "Category deleted");
     } catch (error) {
       console.log(error);
+      res.status(500).json({ message: "Internal Server Error", error });
     }
   },
 };

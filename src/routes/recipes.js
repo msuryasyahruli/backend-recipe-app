@@ -5,6 +5,7 @@ const recipesController = require("../controller/recipes");
 
 router
   .get("/", recipesController.getAllRecipes)
+  .get("/search", recipesController.searching)
   .get("/:id", recipesController.getDetailRecipes)
   .get("/:id/user", recipesController.getMyRecipes)
   .post("/", uploadRecipes, recipesController.insertRecipes)

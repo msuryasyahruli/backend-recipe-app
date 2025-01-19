@@ -1,17 +1,17 @@
 const commonHelper = require("../helper/common");
 const { v4: uuidv4 } = require("uuid");
 const {
-  selectBookmarks,
-  insertBookmarks,
-  deleteBookmarks,
+  selectLikes,
+  insertLikes,
+  deleteLikes,
   findID,
-  findBookmark,
-} = require("../model/bookmarks");
+  findLike,
+} = require("../model/likes");
 const { findID: findUserID } = require("../model/users");
 
-const bookmarksController = {
+const likesController = {
   // get data
-  selectBookmarks: async (req, res) => {
+  selectLikes: async (req, res) => {
     try {
       const user_id = String(req.params.id);
 
@@ -20,7 +20,7 @@ const bookmarksController = {
         return res.status(404).json({ message: "User Not Found" });
       }
 
-      const result = await selectBookmarks(user_id);
+      const result = await selectLikes(user_id);
       commonHelper.response(res, result.rows, 200, "Get Data Success");
     } catch (error) {
       console.error(error);
@@ -29,23 +29,20 @@ const bookmarksController = {
   },
 
   // post data
-  insertBookmarks: async (req, res) => {
+  insertLikes: async (req, res) => {
     try {
       const { recipe_id, user_id } = req.body;
-      const { rowCount: bookmarkExists } = await findBookmark(
-        recipe_id,
-        user_id
-      );
+      const { rowCount: likeExists } = await findLike(recipe_id, user_id);
 
-      if (bookmarkExists) {
-        return res.status(409).json({ message: "Already Bookmarked" });
+      if (likeExists) {
+        return res.status(409).json({ message: "Already Liked" });
       }
 
-      const bookmark_id = uuidv4();
-      const data = { bookmark_id, recipe_id, user_id };
+      const like_id = uuidv4();
+      const data = { like_id, recipe_id, user_id };
 
-      const result = await insertBookmarks(data);
-      commonHelper.response(res, result.rows, 201, "Bookmarked");
+      const result = await insertLikes(data);
+      commonHelper.response(res, result.rows, 201, "Liked");
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Internal Server Error", error });
@@ -53,17 +50,17 @@ const bookmarksController = {
   },
 
   // delete data
-  deleteBookmarks: async (req, res) => {
+  deleteLikes: async (req, res) => {
     try {
-      const bookmark_id = String(req.params.id);
-      const { rowCount: likeIdExists } = await findID(bookmark_id);
+      const like_id = String(req.params.id);
+      const { rowCount: likeIdExists } = await findID(like_id);
 
       if (!likeIdExists) {
         return res.status(404).json({ message: "ID Not Found" });
       }
 
-      const result = await deleteBookmarks(bookmark_id);
-      commonHelper.response(res, result.rows, 200, "Unbookmarked");
+      const result = await deleteLikes(like_id);
+      commonHelper.response(res, result.rows, 200, "Disliked");
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Internal Server Error", error });
@@ -71,4 +68,4 @@ const bookmarksController = {
   },
 };
 
-module.exports = bookmarksController;
+module.exports = likesController;

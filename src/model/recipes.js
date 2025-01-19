@@ -1,13 +1,12 @@
 const Pool = require("../config/db");
 
 // GET ALL RECIPES
-const selectAllRecipes = ({ limit, offset, sort, sortby, search }) => {
+const selectAllRecipes = ({ limit, offset, sort, sortby }) => {
   return Pool.query(`
   SELECT recipes.recipe_id, recipes.recipe_title, users.user_name as recipe_by, recipes.recipe_ingredients, recipes.recipe_thumbnail, recipes.recipe_video, categories.category_name, recipes.created_at
   FROM recipes
   LEFT JOIN users ON recipes.user_id = users.user_id
   LEFT JOIN categories ON recipes.category_id = categories.category_id
-  WHERE recipes.recipe_title ILIKE '%${search}%'
   ORDER BY ${sortby} ${sort} LIMIT ${limit} OFFSET ${offset}`);
 };
 
@@ -97,6 +96,11 @@ const findID = (recipe_id) => {
   );
 };
 
+// SEARCHING
+const searching = (name) => {
+  return Pool.query(`SELECT * FROM recipes WHERE recipe_title ILIKE '%${name}%'`);
+};
+
 module.exports = {
   selectAllRecipes,
   selectDetailRecipes,
@@ -106,4 +110,5 @@ module.exports = {
   deleteRecipes,
   countData,
   findID,
+  searching,
 };

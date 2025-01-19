@@ -1,7 +1,6 @@
 const { v4: uuidv4 } = require("uuid");
 const createError = require("http-errors");
 const commonHelper = require("../helper/common");
-const Joi = require("joi");
 const cloudinary = require("../middlewares/cloudinary");
 const {
   selectAllRecipes,
@@ -12,7 +11,9 @@ const {
   countData,
   findID,
   selectMyRecipes,
+  searching,
 } = require("../model/recipes");
+const schema = require("./validationSchema");
 
 const recipesController = {
   // get all
@@ -23,8 +24,8 @@ const recipesController = {
       const offset = (page - 1) * limit;
       const sortby = req.query.sortby || "created_at";
       const sort = req.query.sort || "desc";
-      const search = req.query.search || "";
-      const result = await selectAllRecipes({ limit, offset, sort, sortby, search });
+
+      const result = await selectAllRecipes({ limit, offset, sort, sortby });
       const {
         rows: [count],
       } = await countData();
@@ -37,76 +38,104 @@ const recipesController = {
         totalPage: totalPage,
       };
 
-      commonHelper.response(
-        res,
-        result.rows,
-        200,
-        "Get Data Success",
-        pagination
-      );
+      const message =
+        result.rowCount === 0 ? "Recipe not found" : "Get Data Success";
+
+      commonHelper.response(res, result.rows, 200, message, pagination);
     } catch (error) {
-      console.log(error);
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error", error });
     }
   },
 
   // get detail
   getDetailRecipes: async (req, res, next) => {
-    const recipe_id = String(req.params.id);
-    const { rowCount } = await findID(recipe_id);
-    if (!rowCount) {
-      return next(createError(403, "ID is Not Found"));
+    try {
+      const recipe_id = String(req.params.id);
+
+      const { rowCount } = await findID(recipe_id);
+      if (!rowCount) {
+        return next(createError(404, "Recipe ID not found"));
+      }
+
+      const result = await selectDetailRecipes(recipe_id);
+
+      commonHelper.response(res, result.rows[0], 200, "Get Data Success");
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error", error });
     }
-    selectDetailRecipes(recipe_id)
-      .then((result) =>
-        commonHelper.response(res, result.rows[0], 200, "Get Data Success")
-      )
-      .catch((err) => res.send(err));
   },
 
   // get by user
-  getMyRecipes: async (req, res) => {
-    const user_id = String(req.params.id);
-    selectMyRecipes(user_id)
-      .then((result) =>
-        commonHelper.response(res, result.rows, 200, "Get Data Success")
-      )
-      .catch((err) => res.send(err));
+  getMyRecipes: async (req, res, next) => {
+    try {
+      const user_id = String(req.params.id);
+      const result = await selectMyRecipes(user_id);
+
+      if (result.rowCount === 0) {
+        return next(createError(404, "User ID is not found"));
+      }
+
+      commonHelper.response(res, result.rows, 200, "Get Data Success");
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error", error });
+    }
   },
 
   // create
-  insertRecipes: async (req, res) => {
-    const { recipe_title, recipe_ingredients, user_id, recipe_video, category_id } =
-      req.body;
-    const recipe_id = uuidv4();
-    let recipe_thumbnail = null;
-    if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path);
-      recipe_thumbnail = result.secure_url;
+  insertRecipes: async (req, res, next) => {
+    try {
+      const { error } = schema.recipeSchema.validate(req.body);
+      if (error) {
+        return next(createError(400, error.details[0].message));
+      }
+
+      const {
+        recipe_title,
+        recipe_ingredients,
+        user_id,
+        recipe_video,
+        category_id,
+      } = req.body;
+      const recipe_id = uuidv4();
+
+      if (req.file) {
+        const result = await cloudinary.uploader.upload(req.file.path);
+        recipe_thumbnail = result.secure_url;
+      } else {
+        return next(createError(400, "Recipe thumbnail is required"));
+      }
+
+      const data = {
+        recipe_id,
+        recipe_title,
+        recipe_ingredients,
+        recipe_thumbnail,
+        recipe_video,
+        category_id,
+        user_id,
+      };
+
+      await insertRecipes(data);
+
+      commonHelper.response(res, [], 201, "Recipe created");
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error", error });
     }
-    const data = {
-      recipe_id,
-      recipe_title,
-      recipe_ingredients,
-      recipe_thumbnail,
-      recipe_video,
-      category_id,
-      user_id,
-    };
-    insertRecipes(data)
-      .then(() =>
-        commonHelper.response(res, data, 201, "Create Recipe Success")
-      )
-      .catch((err) => res.send(err));
   },
 
   // update
-  updateRecipes: async (req, res) => {
+  updateRecipes: async (req, res, next) => {
     try {
       const { recipe_title, recipe_ingredients, recipe_video } = req.body;
       const recipe_id = String(req.params.id);
+
       const { rowCount } = await findID(recipe_id);
       if (!rowCount) {
-        return next(createError(403, "ID is Not Found"));
+        return next(createError(404, "Recipe ID not found"));
       }
 
       let recipe_thumbnail = null;
@@ -122,13 +151,13 @@ const recipesController = {
         recipe_thumbnail,
         recipe_video,
       };
-      updateRecipes(data)
-        .then(() =>
-          commonHelper.response(res, data, 200, "Recipe Updated")
-        )
-        .catch((err) => res.send(err));
+
+      await updateRecipes(data);
+
+      commonHelper.response(res, [], 200, "Recipe updated");
     } catch (error) {
-      console.log(error);
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error", error });
     }
   },
 
@@ -136,14 +165,39 @@ const recipesController = {
   deleteRecipe: async (req, res, next) => {
     try {
       const recipe_id = String(req.params.id);
+
       const { rowCount } = await findID(recipe_id);
       if (!rowCount) {
-        return next(createError(403, "ID is Not Found"));
+        return next(createError(404, "Recipe ID is not found"));
       }
+
       await deleteRecipes(recipe_id);
-      commonHelper.response(res, {}, 200, "Recipe Deleted");
+
+      commonHelper.response(res, [], 200, "Recipe Deleted");
     } catch (error) {
-      next(error);
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error", error });
+    }
+  },
+
+  // searching
+  searching: async (req, res, next) => {
+    try {
+      const search = req.query.keyword;
+
+      if (!search || search.trim() === "") {
+        return next(createError(403, "Keywords should not be empty"));
+      }
+
+      const result = await searching(search);
+
+      const message =
+        result.rowCount === 0 ? "Recipe not found" : "Search success";
+
+      commonHelper.response(res, result.rows, 200, message);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error", error });
     }
   },
 };
