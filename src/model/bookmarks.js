@@ -30,7 +30,7 @@ const deleteBookmarks = (bookmark_id) => {
 const findID = (bookmark_id) => {
   return new Promise((resolve, reject) =>
     Pool.query(
-      `SELECT bookmarks FROM bookmarks WHERE bookmark_id='${bookmark_id}'`,
+      `SELECT bookmark_id FROM bookmarks WHERE bookmark_id='${bookmark_id}'`,
       (error, result) => {
         if (!error) {
           resolve(result);

@@ -102,7 +102,10 @@ const recipesController = {
       const recipe_id = uuidv4();
 
       if (req.file) {
-        const result = await cloudinary.uploader.upload(req.file.path);
+        const result = await cloudinary.uploader.upload(req.file.path, {
+          folder: "Mama Recipe",
+          public_id: recipe_id,
+        });
         recipe_thumbnail = result.secure_url;
       } else {
         return next(createError(400, "Recipe thumbnail is required"));
@@ -140,7 +143,21 @@ const recipesController = {
 
       let recipe_thumbnail = null;
       if (req.file) {
-        const result = await cloudinary.uploader.upload(req.file.path);
+        await cloudinary.uploader.destroy(
+          "Mama Recipe/" + recipe_id,
+          (error) => {
+            if (error) {
+              return next(
+                createError(400, "Error deleting file from Cloudinary:")
+              );
+            }
+          }
+        );
+
+        const result = await cloudinary.uploader.upload(req.file.path, {
+          folder: "Mama Recipe",
+          public_id: recipe_id,
+        });
         recipe_thumbnail = result.secure_url;
       }
 
@@ -172,6 +189,12 @@ const recipesController = {
       }
 
       await deleteRecipes(recipe_id);
+
+      cloudinary.uploader.destroy("Mama Recipe/" + recipe_id, (error) => {
+        if (error) {
+          return next(createError(400, "Error deleting file from Cloudinary:"));
+        }
+      });
 
       commonHelper.response(res, [], 200, "Recipe Deleted");
     } catch (error) {

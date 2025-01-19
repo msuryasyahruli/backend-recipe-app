@@ -1,38 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Food Recipe API Server</title>
-  <link rel="stylesheet" href="/styles.css">
-</head>
-<body>
-  <header>
-    <h1>Food Recipe API Server</h1>
-  </header>
-  <main>
-    <section>
-      <h2>Congrats!</h2>
-      <p>✨ You're successfully running API Server ✨</p>
-    </section>
-    <section>
-      <h3>Resources</h3>
-      <ul>
-        <li><a href="/users/profile">/users</a></li>
-        <li><a href="/recipes">/recipes</a></li>
-        <li><a href="/categories">/categories</a></li>
-        <li><a href="/comments/:id">/comments/:id</a></li>
-        <li><a href="/likes/:id">/likes/:id</a></li>
-        <li><a href="/bookmarks/:id">/bookmarks/:id</a></li>
-      </ul>
-    </section>
-    <section>
-      <h3>Custom Routes</h3>
-      <ul>
-        <li><code>/*</code> → <code>/$1</code></li>
-        <li><code>/recipes/:resource/:id/show</code> → <code>/:resource/:id</code></li>
-      </ul>
-    </section>
-  </main>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Food Recipe API Server - Documentation of routes and endpoints for managing users, recipes, categories, comments, likes, and bookmarks."
+    />
+    <meta name="author" content="Your Name" />
+    <title>Food Recipe API Server</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <!-- Header Section -->
+    <header>
+      <h1>Food Recipe API Server</h1>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+      <!-- Welcome Section -->
+      <section>
+        <h2>Congratulations!</h2>
+        <p>✨ You're successfully running the API Server ✨</p>
+      </section>
+
+      <!-- Resources Section -->
+      <section>
+        <h2>Resources</h2>
+        <ul>
+          <li><a href="/users/profile" alt="Users API">/users</a></li>
+          <li><a href="/recipes" alt="Recipes API">/recipes</a></li>
+          <li><a href="/categories" alt="Categories API">/categories</a></li>
+          <li><a href="/comments/:id" alt="Comments API">/comments/:id</a></li>
+          <li><a href="/likes/:id" alt="Likes API">/likes/:id</a></li>
+          <li>
+            <a href="/bookmarks/:id" alt="Bookmarks API">/bookmarks/:id</a>
+          </li>
+        </ul>
+      </section>
+
+      <!-- Custom Routes Section -->
+      <section>
+        <h2>Custom Routes</h2>
+
+        <!-- Users Router -->
+        <article>
+          <h3>Users Router</h3>
+          <ul>
+            <li>POST - <code>/users/register</code></li>
+            <li>POST - <code>/users/login</code></li>
+            <li>GET - <code>/users/profile</code></li>
+            <li>PATCH - <code>/users/:id</code></li>
+            <li>PUT - <code>/users/:id/password</code></li>
+            <li>DELETE - <code>/users/:id</code></li>
+          </ul>
+        </article>
+
+        <!-- Recipes Router -->
+        <article>
+          <h3>Recipes Router</h3>
+          <ul>
+            <li>GET - <code>/recipes</code></li>
+            <li>GET - <code>/recipes/:id</code></li>
+            <li>GET - <code>/recipes/:id/user</code></li>
+            <li>GET - <code>/recipes/search</code></li>
+            <li>POST - <code>/recipes</code></li>
+            <li>PATCH - <code>/recipes/:id</code></li>
+            <li>DELETE - <code>/recipes/:id</code></li>
+          </ul>
+        </article>
+
+        <!-- Categories Router -->
+        <article>
+          <h3>Categories Router</h3>
+          <ul>
+            <li>GET - <code>/categories</code></li>
+            <li>POST - <code>/categories</code></li>
+            <li>PUT - <code>/categories/:id</code></li>
+            <li>DELETE - <code>/categories/:id</code></li>
+          </ul>
+        </article>
+
+        <!-- Comments Router -->
+        <article>
+          <h3>Comments Router</h3>
+          <ul>
+            <li>GET - <code>/comments/:id</code></li>
+            <li>POST - <code>/comments</code></li>
+            <li>PUT - <code>/comments/:id</code></li>
+            <li>DELETE - <code>/comments/:id</code></li>
+          </ul>
+        </article>
+
+        <!-- Likes Router -->
+        <article>
+          <h3>Likes Router</h3>
+          <ul>
+            <li>GET - <code>/likes/:id</code></li>
+            <li>POST - <code>/likes</code></li>
+            <li>DELETE - <code>/likes/:id</code></li>
+          </ul>
+        </article>
+
+        <!-- Bookmarks Router -->
+        <article>
+          <h3>Bookmarks Router</h3>
+          <ul>
+            <li>GET - <code>/bookmarks/:id</code></li>
+            <li>POST - <code>/bookmarks</code></li>
+            <li>DELETE - <code>/bookmarks/:id</code></li>
+          </ul>
+        </article>
+      </section>
+    </main>
+  </body>
 </html>

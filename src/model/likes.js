@@ -30,7 +30,7 @@ const deleteLikes = (like_id) => {
 const findID = (like_id) => {
   return new Promise((resolve, reject) =>
     Pool.query(
-      `SELECT likes FROM Likes WHERE like_id='${like_id}'`,
+      `SELECT like_id FROM Likes WHERE like_id='${like_id}'`,
       (error, result) => {
         if (!error) {
           resolve(result);

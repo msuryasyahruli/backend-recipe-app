@@ -37,7 +37,7 @@ const deleteComments = (comment_id) => {
 const findID = (comment_id) => {
   return new Promise((resolve, reject) =>
     Pool.query(
-      `SELECT comments FROM comments WHERE comment_id='${comment_id}'`,
+      `SELECT comment_id FROM comments WHERE comment_id='${comment_id}'`,
       (error, result) => {
         if (!error) {
           resolve(result);

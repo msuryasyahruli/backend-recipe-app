@@ -84,7 +84,7 @@ const countData = () => {
 const findID = (recipe_id) => {
   return new Promise((resolve, reject) =>
     Pool.query(
-      `SELECT recipes FROM recipes WHERE recipe_id='${recipe_id}'`,
+      `SELECT recipe_id, recipe_title FROM recipes WHERE recipe_id='${recipe_id}'`,
       (error, result) => {
         if (!error) {
           resolve(result);
