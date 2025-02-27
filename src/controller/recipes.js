@@ -1,5 +1,4 @@
 const { v4: uuidv4 } = require("uuid");
-const createError = require("http-errors");
 const commonHelper = require("../helper/common");
 const cloudinary = require("../middlewares/cloudinary");
 const {
@@ -44,18 +43,18 @@ const recipesController = {
       commonHelper.response(res, result.rows, 200, message, pagination);
     } catch (error) {
       console.error(error);
-      res.status(500).json({ message: "Internal Server Error", error });
+      res.status(500).json({ message: "Internal Server Error" });
     }
   },
 
   // get detail
-  getDetailRecipes: async (req, res, next) => {
+  getDetailRecipes: async (req, res) => {
     try {
       const recipe_id = String(req.params.id);
 
       const { rowCount } = await findID(recipe_id);
       if (!rowCount) {
-        return next(createError(404, "Recipe ID not found"));
+        return res.json({ message: "Recipe ID not found" });
       }
 
       const result = await selectDetailRecipes(recipe_id);
@@ -63,33 +62,33 @@ const recipesController = {
       commonHelper.response(res, result.rows[0], 200, "Get Data Success");
     } catch (error) {
       console.error(error);
-      res.status(500).json({ message: "Internal Server Error", error });
+      res.status(500).json({ message: "Internal Server Error" });
     }
   },
 
   // get by user
-  getMyRecipes: async (req, res, next) => {
+  getMyRecipes: async (req, res) => {
     try {
       const user_id = String(req.params.id);
       const result = await selectMyRecipes(user_id);
 
       if (result.rowCount === 0) {
-        return next(createError(404, "User ID is not found"));
+        return res.json({ message: "User ID is not found" });
       }
 
       commonHelper.response(res, result.rows, 200, "Get Data Success");
     } catch (error) {
       console.error(error);
-      res.status(500).json({ message: "Internal Server Error", error });
+      res.status(500).json({ message: "Internal Server Error" });
     }
   },
 
   // create
-  insertRecipes: async (req, res, next) => {
+  insertRecipes: async (req, res) => {
     try {
       const { error } = schema.recipeSchema.validate(req.body);
       if (error) {
-        return next(createError(400, error.details[0].message));
+        return res.json({ message: error.details[0].message });
       }
 
       const {
@@ -108,7 +107,7 @@ const recipesController = {
         });
         recipe_thumbnail = result.secure_url;
       } else {
-        return next(createError(400, "Recipe thumbnail is required"));
+        return res.json({ message: "Recipe thumbnail is required" });
       }
 
       const data = {
@@ -126,19 +125,19 @@ const recipesController = {
       commonHelper.response(res, [], 201, "Recipe created");
     } catch (error) {
       console.error(error);
-      res.status(500).json({ message: "Internal Server Error", error });
+      res.status(500).json({ message: "Internal Server Error" });
     }
   },
 
   // update
-  updateRecipes: async (req, res, next) => {
+  updateRecipes: async (req, res) => {
     try {
       const { recipe_title, recipe_ingredients, recipe_video } = req.body;
       const recipe_id = String(req.params.id);
 
       const { rowCount } = await findID(recipe_id);
       if (!rowCount) {
-        return next(createError(404, "Recipe ID not found"));
+        return res.json({ message: "Recipe ID not found" });
       }
 
       let recipe_thumbnail = null;
@@ -147,9 +146,9 @@ const recipesController = {
           "Mama Recipe/" + recipe_id,
           (error) => {
             if (error) {
-              return next(
-                createError(400, "Error deleting file from Cloudinary:")
-              );
+              return res.json({
+                message: "Error deleting file from Cloudinary:",
+              });
             }
           }
         );
@@ -174,42 +173,42 @@ const recipesController = {
       commonHelper.response(res, [], 200, "Recipe updated");
     } catch (error) {
       console.error(error);
-      res.status(500).json({ message: "Internal Server Error", error });
+      res.status(500).json({ message: "Internal Server Error" });
     }
   },
 
   // delete
-  deleteRecipe: async (req, res, next) => {
+  deleteRecipe: async (req, res) => {
     try {
       const recipe_id = String(req.params.id);
 
       const { rowCount } = await findID(recipe_id);
       if (!rowCount) {
-        return next(createError(404, "Recipe ID is not found"));
+        return res.json({ message: "Recipe ID is not found" });
       }
 
       await deleteRecipes(recipe_id);
 
       cloudinary.uploader.destroy("Mama Recipe/" + recipe_id, (error) => {
         if (error) {
-          return next(createError(400, "Error deleting file from Cloudinary:"));
+          return res.json({ message: "Error deleting file from Cloudinary:" });
         }
       });
 
       commonHelper.response(res, [], 200, "Recipe Deleted");
     } catch (error) {
       console.error(error);
-      res.status(500).json({ message: "Internal Server Error", error });
+      res.status(500).json({ message: "Internal Server Error" });
     }
   },
 
   // searching
-  searching: async (req, res, next) => {
+  searching: async (req, res) => {
     try {
       const search = req.query.keyword;
 
       if (!search || search.trim() === "") {
-        return next(createError(403, "Keywords should not be empty"));
+        return res.json({ message: "Keywords should not be empty" });
       }
 
       const result = await searching(search);
@@ -220,7 +219,7 @@ const recipesController = {
       commonHelper.response(res, result.rows, 200, message);
     } catch (error) {
       console.error(error);
-      res.status(500).json({ message: "Internal Server Error", error });
+      res.status(500).json({ message: "Internal Server Error" });
     }
   },
 };

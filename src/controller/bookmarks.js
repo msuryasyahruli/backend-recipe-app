@@ -17,7 +17,7 @@ const bookmarksController = {
 
       const { rowCount: userExists } = await findUserID(user_id);
       if (!userExists) {
-        return res.status(404).json({ message: "User Not Found" });
+        return res.json({ message: "User Not Found" });
       }
 
       const result = await selectBookmarks(user_id);
@@ -38,7 +38,7 @@ const bookmarksController = {
       );
 
       if (bookmarkExists) {
-        return res.status(409).json({ message: "Already Bookmarked" });
+        return res.json({ message: "Already Bookmarked" });
       }
 
       const bookmark_id = uuidv4();
@@ -59,7 +59,7 @@ const bookmarksController = {
       const { rowCount: likeIdExists } = await findID(bookmark_id);
 
       if (!likeIdExists) {
-        return res.status(404).json({ message: "ID Not Found" });
+        return res.json({ message: "ID Not Found" });
       }
 
       const result = await deleteBookmarks(bookmark_id);

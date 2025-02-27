@@ -17,7 +17,7 @@ const likesController = {
 
       const { rowCount: userExists } = await findUserID(user_id);
       if (!userExists) {
-        return res.status(404).json({ message: "User Not Found" });
+        return res.json({ message: "User Not Found" });
       }
 
       const result = await selectLikes(user_id);
@@ -35,7 +35,7 @@ const likesController = {
       const { rowCount: likeExists } = await findLike(recipe_id, user_id);
 
       if (likeExists) {
-        return res.status(409).json({ message: "Already Liked" });
+        return res.json({ message: "Already Liked" });
       }
 
       const like_id = uuidv4();
@@ -56,7 +56,7 @@ const likesController = {
       const { rowCount: likeIdExists } = await findID(like_id);
 
       if (!likeIdExists) {
-        return res.status(404).json({ message: "ID Not Found" });
+        return res.json({ message: "ID Not Found" });
       }
 
       const result = await deleteLikes(like_id);

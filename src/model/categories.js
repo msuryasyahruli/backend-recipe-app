@@ -3,7 +3,7 @@ const Pool = require("../config/db");
 // SELECT Categories
 const selectCategories = () => {
   return Pool.query(
-    `SELECT * FROM categories`
+    `SELECT * FROM categories ORDER BY category_name ASC`
   );
 };
 

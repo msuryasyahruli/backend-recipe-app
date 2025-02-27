@@ -9,7 +9,6 @@ const {
 } = require("../model/comments");
 const { findID: findRecipeID } = require("../model/recipes");
 const schema = require("./validationSchema");
-const createError = require("http-errors");
 
 const commentsController = {
   // get data
@@ -31,11 +30,11 @@ const commentsController = {
   },
 
   // create data
-  insertComments: async (req, res, next) => {
+  insertComments: async (req, res) => {
     try {
       const { error } = schema.commentSchema.validate(req.body);
       if (error) {
-        return next(createError(400, error.details[0].message));
+        return res.json({message: error.details[0].message});
       }
 
       const { recipe_id, user_id, comment_text } = req.body;
@@ -63,18 +62,18 @@ const commentsController = {
   },
 
   // update data
-  updateComments: async (req, res, next) => {
+  updateComments: async (req, res) => {
     try {
       const comment_id = String(req.params.id);
 
       const { rowCount } = await findID(comment_id);
       if (!rowCount) {
-        return next(createError(404, "Comment ID Not Found"));
+        return res.json({message: "Comment ID Not Found"});
       }
 
       const { error } = schema.updateCommentSchema.validate(req.body);
       if (error) {
-        return next(createError(400, error.details[0].message));
+        return res.json({message: error.details[0].message});
       }
 
       const { comment_text } = req.body;

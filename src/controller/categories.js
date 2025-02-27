@@ -1,4 +1,3 @@
-const createError = require("http-errors");
 const commonHelper = require("../helper/common");
 const {
   selectCategories,
@@ -8,6 +7,7 @@ const {
   findID,
 } = require("../model/categories");
 const { v4: uuidv4 } = require("uuid");
+const { categorySchema } = require("./validationSchema");
 
 const categoriesController = {
   // get data
@@ -22,11 +22,11 @@ const categoriesController = {
   },
 
   // create data
-  insertCategories: async (req, res, next) => {
+  insertCategories: async (req, res) => {
     try {
       const { error } = categorySchema.validate(req.body);
       if (error) {
-        return next(createError(400, error.details[0].message));
+        return res.json({ message: error.details[0].message });
       }
 
       const { category_name } = req.body;
@@ -45,14 +45,14 @@ const categoriesController = {
   },
 
   // update data
-  updateCategories: async (req, res, next) => {
+  updateCategories: async (req, res) => {
     try {
       const category_id = String(req.params.id);
-      
+
       const { category_name } = req.body;
       const { rowCount } = await findID(category_id);
       if (!rowCount) {
-        return next(createError(404, "Category is not found"));
+        return res.json({ message: "Category is not found" });
       }
 
       const data = {
@@ -69,13 +69,13 @@ const categoriesController = {
   },
 
   // delete data
-  deleteCategories: async (req, res, next) => {
+  deleteCategories: async (req, res) => {
     try {
       const category_id = String(req.params.id);
 
       const { rowCount } = await findID(category_id);
       if (!rowCount) {
-        return next(createError(404, "Category is not found"));
+        return res.json({ message: "Category is not found" });
       }
 
       await deleteCategories(category_id);

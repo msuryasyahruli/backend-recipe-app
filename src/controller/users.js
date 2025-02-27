@@ -4,7 +4,6 @@ const jwt = require("jsonwebtoken");
 const authHelper = require("../helper/auth");
 const commonHelper = require("../helper/common");
 const cloudinary = require("../middlewares/cloudinary");
-const createError = require("http-errors");
 
 let {
   createUsers,
@@ -27,7 +26,7 @@ const usersController = {
       } = await findEmail(email);
 
       if (!user) {
-        return res.status(404).json({ message: "User not found" });
+        return res.json({ message: "User not found" });
       }
 
       delete user.user_password;
@@ -40,11 +39,11 @@ const usersController = {
   },
 
   // register
-  registerUsers: async (req, res, next) => {
+  registerUsers: async (req, res) => {
     try {
       const { error } = schema.userSchema.validate(req.body);
       if (error) {
-        return next(createError(400, error.details[0].message));
+        return res.json({ message: error.details[0].message });
       }
 
       const {
@@ -56,11 +55,11 @@ const usersController = {
       } = req.body;
       const { rowCount } = await findEmail(user_email);
       if (rowCount) {
-        return next(createError(409, "Email Already Taken"));
+        return res.json({ message: "Email Already Taken" });
       }
 
       if (user_password !== confirm_password) {
-        return next(createError(400, "Passwords do not match"));
+        return res.json({ message: "Passwords do not match" });
       }
 
       const user_id = uuidv4();
@@ -84,14 +83,14 @@ const usersController = {
   },
 
   // login
-  loginUsers: async (req, res, next) => {
+  loginUsers: async (req, res) => {
     try {
       const { user_email, user_password } = req.body;
       const {
         rows: [user],
       } = await findEmail(user_email);
       if (!user) {
-        return next(createError(401, "Email is incorrect"));
+        return res.json({ message: "Email is incorrect" });
       }
 
       const isValidPassword = bcrypt.compareSync(
@@ -99,17 +98,16 @@ const usersController = {
         user.user_password
       );
       if (!isValidPassword) {
-        return next(createError(401, "Password is incorrect"));
+        return res.json({ message: "Password is incorrect" });
       }
 
       delete user.user_password;
 
       const payload = { user_email: user.user_email };
-      user.token_user = authHelper.generateToken(payload);
+      user.token = authHelper.generateToken(payload);
       user.refreshToken = authHelper.generateRefreshToken(payload);
 
-      const data = { token: user.token_user, refreshToken: user.refreshToken };
-      commonHelper.response(res, data, 200, "Login Successfully");
+      commonHelper.response(res, user, 201, "Login Successfully");
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Internal Server Error", error });
@@ -117,14 +115,14 @@ const usersController = {
   },
 
   // update
-  updateUsers: async (req, res, next) => {
+  updateUsers: async (req, res) => {
     try {
       const { user_name, user_phone } = req.body;
       const user_id = String(req.params.id);
 
       const { rowCount } = await findID(user_id);
       if (!rowCount) {
-        return next(createError(404, "User ID Not Found"));
+        return res.json({ message: "User ID Not Found" });
       }
 
       let user_photo = null;
@@ -151,21 +149,21 @@ const usersController = {
   },
 
   // update password
-  updatePasswordUsers: async (req, res, next) => {
+  updatePasswordUsers: async (req, res) => {
     try {
       const { error } = schema.passwordSchema.validate(req.body);
       if (error) {
-        return next(createError(400, error.details[0].message));
+        return res.json({ message: error.details[0].message });
       }
 
       const { user_password, confirm_password } = req.body;
       const user_id = String(req.params.id);
       const { rowCount } = await findID(user_id);
       if (!rowCount) {
-        return next(createError(404, "User ID Not Found"));
+        return res.json({ message: "User ID Not Found" });
       }
       if (user_password !== confirm_password) {
-        return next(createError(400, "Passwords do not match"));
+        return res.json({ message: "Passwords do not match" });
       }
 
       const user_passwordHash = bcrypt.hashSync(confirm_password);
@@ -185,12 +183,12 @@ const usersController = {
   },
 
   // delete
-  deleteUsers: async (req, res, next) => {
+  deleteUsers: async (req, res) => {
     try {
       const user_id = String(req.params.id);
       const { rowCount } = await findID(user_id);
       if (!rowCount) {
-        return next(createError(404, "User ID Not Found"));
+        return res.json({ message: "User ID Not Found" });
       }
       deleteUsers(user_id)
         .then((result) =>
@@ -198,7 +196,7 @@ const usersController = {
         )
         .catch((err) => res.send(err));
     } catch (error) {
-      console.log(error);
+      console.error(error);
       res.status(500).json({ message: "Internal Server Error", error });
     }
   },
